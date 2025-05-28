@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Client = require('../models/Client');
+const mongoose = require('mongoose'); // ✅ Required for ObjectId validation
 const bcrypt = require('bcryptjs');
+const Client = require('../models/Client');
 
 // GET all clients (excluding passwords)
 router.get('/clients', async (req, res) => {
@@ -29,10 +30,21 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const newClient = new Client({ name, email, password, mobile, address });
-    await newClient.save();
+    // ✅ Hash password before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
+    const newClient = new Client({
+      name,
+      email,
+      password: hashedPassword,
+      mobile,
+      address
+    });
+
+    await newClient.save();
     res.status(201).json({ message: 'Client registered successfully' });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -58,9 +70,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Return client info (excluding password)
+    // Exclude password in response
     const { name, mobile, address } = client;
-    res.json({ message: 'Login successful', client: { name, email, mobile, address } });
+    res.json({
+      message: 'Login successful',
+      client: { name, email, mobile, address }
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -71,29 +87,29 @@ router.post('/login', async (req, res) => {
 router.delete('/clients/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    console.log('Attempting to delete client with ID:', id); // Debug log
-    
+
+    console.log('Attempting to delete client with ID:', id);
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       console.log('Invalid ID format:', id);
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Invalid client ID format' 
+        message: 'Invalid client ID format'
       });
     }
 
     const deletedClient = await Client.findByIdAndDelete(id);
-    
+
     if (!deletedClient) {
       console.log('Client not found with ID:', id);
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Client not found' 
+        message: 'Client not found'
       });
     }
-    
+
     console.log('Successfully deleted client:', deletedClient);
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
       message: 'Client deleted successfully',
       deletedClient: {
@@ -102,13 +118,13 @@ router.delete('/clients/:id', async (req, res) => {
         email: deletedClient.email
       }
     });
-    
+
   } catch (err) {
     console.error('Error deleting client:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Server error while deleting client',
-      error: err.message 
+      error: err.message
     });
   }
 });
