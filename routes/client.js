@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose'); // ✅ Required for ObjectId validation
-const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const Client = require('../models/Client');
 
 // GET all clients (excluding passwords)
@@ -20,7 +19,6 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, mobile, address } = req.body;
 
-    // Validate required fields
     if (!name || !email || !password || !mobile || !address) {
       return res.status(400).json({ message: 'All fields are required' });
     }
@@ -30,53 +28,16 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // ✅ Hash password before saving
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const newClient = new Client({
       name,
       email,
-      password: hashedPassword,
+      password,
       mobile,
       address
     });
 
     await newClient.save();
     res.status(201).json({ message: 'Client registered successfully' });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Login client
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
-    const client = await Client.findOne({ email });
-    if (!client) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    const isMatch = await bcrypt.compare(password, client.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    // Exclude password in response
-    const { name, mobile, address } = client;
-    res.json({
-      message: 'Login successful',
-      client: { name, email, mobile, address }
-    });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -87,7 +48,6 @@ router.post('/login', async (req, res) => {
 router.delete('/clients/:id', async (req, res) => {
   try {
     const { id } = req.params;
-
     console.log('Attempting to delete client with ID:', id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -99,7 +59,6 @@ router.delete('/clients/:id', async (req, res) => {
     }
 
     const deletedClient = await Client.findByIdAndDelete(id);
-
     if (!deletedClient) {
       console.log('Client not found with ID:', id);
       return res.status(404).json({
@@ -118,7 +77,6 @@ router.delete('/clients/:id', async (req, res) => {
         email: deletedClient.email
       }
     });
-
   } catch (err) {
     console.error('Error deleting client:', err);
     res.status(500).json({

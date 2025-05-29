@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const machineRoutes = require('./routes/machines');
-const clientRoutes = require('./routes/client');
+const authRoutes = require('./routes/auth');
+const clientRoutes = require('./routes/client'); // Add client routes
 const orderRoutes = require('./routes/orders');
 
 const app = express();
@@ -14,9 +15,16 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
+// Request logging for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 // Routes
 app.use('/api/machines', machineRoutes);
-app.use('/api/auth', clientRoutes);
+app.use('/api/auth', authRoutes); // Mount auth routes (login)
+app.use('/api/auth', clientRoutes); // Mount client routes (clients, register, delete)
 app.use('/api/orders', orderRoutes);
 
 // MongoDB connection
