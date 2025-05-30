@@ -1,77 +1,42 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-
+const Order = require('../models/Order');
 const Machine = require('../models/Machine');
 
-// Order Schema
-const orderSchema = new mongoose.Schema({
-  clientName: {
-    type: String,
-    required: true,
-  },
-  machineId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Machine',
-    required: true,
-  },
-  machineName: {
-    type: String,
-    required: true,
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 1,
-  },
-  totalPrice: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-  address: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
-
-const Order = mongoose.model('Order', orderSchema);
-
-// Create a new order
+// Place a new order
 router.post('/', async (req, res) => {
-  const { clientName, machineId, machineName, quantity, totalPrice, address } = req.body;
-
-  // Validate required fields
-  if (!clientName || !machineId || !machineName || !quantity || !totalPrice || !address) {
-    return res.status(400).json({ message: 'All fields are required' });
-  }
-
-  // Validate quantity
-  if (quantity < 1) {
-    return res.status(400).json({ message: 'Quantity must be at least 1' });
-  }
-
   try {
-    // Check if machine exists and has sufficient stock
+    const { clientName, mobileNumber, machineId, machineName, quantity, totalPrice, address } = req.body;
+
+    // Validate required fields
+    if (!clientName || !mobileNumber || !machineId || !machineName || !quantity || !totalPrice || !address) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate mobile number (basic 10-digit check)
+    if (!/^\d{10}$/.test(mobileNumber)) {
+      return res.status(400).json({ error: 'Invalid mobile number. Must be 10 digits.' });
+    }
+
+    // Validate machineId
+    if (!mongoose.Types.ObjectId.isValid(machineId)) {
+      return res.status(400).json({ error: 'Invalid machine ID format' });
+    }
+
+    // Check if machine exists and has sufficient quantity
     const machine = await Machine.findById(machineId);
     if (!machine) {
-      return res.status(404).json({ message: 'Machine not found' });
+      return res.status(404).json({ error: 'Machine not found' });
     }
     if (machine.quantity < quantity) {
-      return res.status(400).json({ message: `Only ${machine.quantity} units available` });
+      return res.status(400).json({ error: `Only ${machine.quantity} units available` });
     }
 
-    // Update machine quantity
-    machine.quantity -= quantity;
-    await machine.save();
-
-    // Create new orde
-    const order = new Order({
+    // Create new order
+    const newOrder = new Order({
       clientName,
+      mobileNumber,
       machineId,
       machineName,
       quantity,
@@ -79,20 +44,28 @@ router.post('/', async (req, res) => {
       address,
     });
 
-    const newOrder = await order.save();
-    res.status(201).json(newOrder);
+    // Save order
+    await newOrder.save();
+
+    // Update machine quantity
+    machine.quantity -= quantity;
+    await machine.save();
+
+    res.status(201).json({ message: 'Order placed successfully', order: newOrder });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error placing order:', err);
+    res.status(500).json({ error: 'Server error while placing order' });
   }
 });
 
-// Get all orders (optional, for admin use)
+// Get all orders
 router.get('/', async (req, res) => {
   try {
     const orders = await Order.find().populate('machineId', 'name price');
     res.json(orders);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ error: 'Server error while fetching orders' });
   }
 });
 

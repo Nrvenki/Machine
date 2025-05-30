@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const machineRoutes = require('./routes/machines');
 const authRoutes = require('./routes/auth');
-const clientRoutes = require('./routes/client'); // Add client routes
+const clientRoutes = require('./routes/client');
 const orderRoutes = require('./routes/orders');
 
 const app = express();
@@ -23,8 +23,8 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/machines', machineRoutes);
-app.use('/api/auth', authRoutes); // Mount auth routes (login)
-app.use('/api/auth', clientRoutes); // Mount client routes (clients, register, delete)
+app.use('/api/auth', authRoutes);
+app.use('/api/clients', clientRoutes);
 app.use('/api/orders', orderRoutes);
 
 // MongoDB connection

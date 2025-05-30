@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const Client = require('../models/Client');
 
 // GET all clients (excluding passwords)
-router.get('/clients', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const clients = await Client.find({}, { password: 0 });
     res.json(clients);
@@ -45,7 +45,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Delete a client
-router.delete('/clients/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     console.log('Attempting to delete client with ID:', id);
