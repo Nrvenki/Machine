@@ -1,26 +1,58 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const Order = require('../models/Order'); // Use the Order model from models/Order.js
+
 const Machine = require('../models/Machine');
+
+// Order Schema
+const orderSchema = new mongoose.Schema({
+  clientName: {
+    type: String,
+    required: true,
+  },
+  machineId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Machine',
+    required: true,
+  },
+  machineName: {
+    type: String,
+    required: true,
+  },
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1,
+  },
+  totalPrice: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  address: {
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const Order = mongoose.model('Order', orderSchema);
 
 // Create a new order
 router.post('/', async (req, res) => {
-  const { clientName, mobileNumber, machineId, machineName, quantity, totalPrice, address } = req.body;
+  const { clientName, machineId, machineName, quantity, totalPrice, address } = req.body;
 
   // Validate required fields
-  if (!clientName || !mobileNumber || !machineId || !machineName || !quantity || !totalPrice || !address) {
-    return res.status(400).json({ message: 'All fields are required, including mobile number' });
+  if (!clientName || !machineId || !machineName || !quantity || !totalPrice || !address) {
+    return res.status(400).json({ message: 'All fields are required' });
   }
 
   // Validate quantity
   if (quantity < 1) {
     return res.status(400).json({ message: 'Quantity must be at least 1' });
-  }
-
-  // Validate mobile number format (10 digits)
-  if (!/^\d{10}$/.test(mobileNumber)) {
-    return res.status(400).json({ message: 'Mobile number must be a valid 10-digit number' });
   }
 
   try {
@@ -37,10 +69,9 @@ router.post('/', async (req, res) => {
     machine.quantity -= quantity;
     await machine.save();
 
-    // Create new order
+    // Create new orde
     const order = new Order({
       clientName,
-      mobileNumber,
       machineId,
       machineName,
       quantity,
