@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-
+const Order = require('../models/Order');
 const Machine = require('../models/Machine');
 
 // Order Schema
