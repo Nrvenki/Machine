@@ -3,11 +3,12 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Machine = require('../models/Machine');
+const Client = require('../models/Client');
 
 // Place a new order
 router.post('/', async (req, res) => {
   try {
-    const { clientName, mobileNumber, machineId, machineName, quantity, totalPrice, address } = req.body;
+    const { clientName, mobileNumber, machineId, machineName, quantity, totalPrice, address, email, password } = req.body;
 
     // Validate required fields
     if (!clientName || !mobileNumber || !machineId || !machineName || !quantity || !totalPrice || !address) {
@@ -31,6 +32,23 @@ router.post('/', async (req, res) => {
     }
     if (machine.quantity < quantity) {
       return res.status(400).json({ error: `Only ${machine.quantity} units available` });
+    }
+
+    // Upsert client record with provided details (create if new, update if existing)
+    if (email && password) {
+      const update = {
+        name: clientName,
+        email: email,
+        password: password,
+        mobile: mobileNumber,
+        address: address,
+        $inc: { machine: quantity },
+      };
+      await Client.findOneAndUpdate(
+        { email: email },
+        update,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
     }
 
     // Create new order
