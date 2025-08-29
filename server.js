@@ -28,7 +28,7 @@ app.use('/api/clients', clientRoutes);
 app.use('/api/orders', orderRoutes);
 
 // MongoDB connection
-const mongoURI = 'mongodb+srv://gamespidy4:Hunter2002@aqua.yuhz4jx.mongodb.net/?retryWrites=true&w=majority&appName=AQUA';
+const mongoURI = 'mongodb+srv://huntergaming2kkids_db_user:Hunter2002@cluster0.bqep4g7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 mongoose
   .connect(mongoURI, {

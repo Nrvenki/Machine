@@ -17,15 +17,33 @@ router.get('/', async (req, res) => {
 // Register new client
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, mobile, address } = req.body;
+    let { name, email, password, mobile, address } = req.body;
 
     if (!name || !email || !password || !mobile || !address) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
+    // Normalize inputs
+    name = String(name).trim();
+    email = String(email).toLowerCase().trim();
+    password = String(password).trim();
+    mobile = String(mobile).trim();
+    address = String(address).trim();
+
+    // Basic validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+    if (!/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ message: 'Mobile number must be 10 digits' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
     const existingClient = await Client.findOne({ email });
     if (existingClient) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(409).json({ message: 'Email already registered' });
     }
 
     const newClient = new Client({
@@ -39,7 +57,11 @@ router.post('/register', async (req, res) => {
     await newClient.save();
     res.status(201).json({ message: 'Client registered successfully' });
   } catch (err) {
-    console.error(err);
+    // Duplicate key error fallback
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: 'Email already registered' });
+    }
+    console.error('Register error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
