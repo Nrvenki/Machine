@@ -29,10 +29,12 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       message: 'Login successful',
       token,
-      client: {
+      user: {
         id: client._id,
         name: client.name,
-        email: client.email
+        email: client.email,
+        mobile: client.mobile,
+        address: client.address
       }
     });
   } catch (err) {

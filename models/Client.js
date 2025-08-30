@@ -6,7 +6,6 @@ const clientSchema = new mongoose.Schema({
   password: { type: String, required: true },
   mobile: { type: String, required: true },
   address: { type: String, required: true },
-  // Total number of machines ordered by this client
   machine: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });

@@ -109,4 +109,25 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Get client profile by email (excluding password)
+router.get('/profile/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    console.log('🔍 Fetching profile for email:', email);
+    
+    const client = await Client.findOne({ email: email }).select('-password');
+    
+    if (!client) {
+      console.log('❌ Client not found for email:', email);
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    
+    console.log('✅ Profile found for:', client.name);
+    res.json(client);
+  } catch (err) {
+    console.error('Error fetching client profile:', err);
+    res.status(500).json({ error: 'Server error while fetching profile' });
+  }
+});
+
 module.exports = router;
